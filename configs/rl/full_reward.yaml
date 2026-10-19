@@ -103,11 +103,11 @@ worker:
   reward:
     reward_function: reward_functions/conreg_four_aspect_reward_colqwen2_stepwise_with_order.py:compute_score
     reward_function_kwargs:
-      answer_weight: 0.35
-      grounding_weight: 0.3
-      stepwise_weight: 0.25
-      format_weight: 0.1
-      require_valid_weight_sum: true
+      answer_weight: 1.0
+      grounding_weight: 1.0
+      stepwise_weight: 1.0
+      format_weight: 1.0
+      require_valid_weight_sum: false
       pred_coordinate_space: "pixel"
       gold_coordinate_space: "pixel"
       allow_missing_image_index: true

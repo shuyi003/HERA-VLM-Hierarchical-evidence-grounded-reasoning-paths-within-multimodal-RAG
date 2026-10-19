@@ -24,6 +24,16 @@ def main():
             body.append(node)
         elif isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id in CONSTANTS for t in node.targets):
             body.append(node)
+    # Execute the actual aggregation expression so clipping/normalization regressions fail.
+    score_one = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_score_one")
+    aggregation = next(n for n in score_one.body if isinstance(n, ast.Assign)
+                       and any(isinstance(t, ast.Name) and t.id == "overall" for t in n.targets))
+    total_expression = compile(ast.Expression(aggregation.value), str(SOURCE), "eval")
+    for scores, expected in [((1, 1, 1, 1), 4.0), ((0, 0, 0, 0), 0.0),
+                             ((0.2, 0.4, 0.6, 0.8), 2.0)]:
+        inputs = dict(zip(("answer_score", "grounding_score", "stepwise_score", "format_score"), scores))
+        inputs.update(dict.fromkeys(("answer_weight", "grounding_weight", "stepwise_weight", "format_weight"), 1.0))
+        assert abs(eval(total_expression, inputs) - expected) < 1e-8
     namespace = {}
     exec(compile(ast.Module(body=body, type_ignores=[]), str(SOURCE), 'exec'), namespace)
     example = json.loads((ROOT / 'examples/reward_input.json').read_text())[0]
@@ -42,7 +52,7 @@ def main():
     assert namespace['soft_iou_reward'](0.10) == 0
     assert namespace['soft_iou_reward'](0.50) == 1
     assert abs(namespace['soft_iou_reward'](0.30) - 0.5) < 1e-8
-    print('PASS: synthetic format/box parsing, no-answer rule, IoU, and soft-threshold components.')
+    print('PASS: synthetic format/box parsing, no-answer rule, IoU, soft-threshold components, and total reward in [0, 4].')
 
 if __name__ == '__main__':
     main()

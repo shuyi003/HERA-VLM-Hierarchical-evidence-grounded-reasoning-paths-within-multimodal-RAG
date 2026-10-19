@@ -2984,7 +2984,8 @@ def _score_one(
 
     format_score = output_format_score(response, gold_is_no_answer)
 
-    overall = clamp(
+    # Each aspect remains in [0, 1]; unit weights give an overall score in [0, 4].
+    overall = (
         answer_weight * answer_score
         + grounding_weight * grounding_score
         + stepwise_weight * stepwise_score
@@ -3098,11 +3099,11 @@ def _score_one(
 
 def compute_score(
     reward_inputs: list[dict[str, Any]],
-    answer_weight: float = 0.35,
-    grounding_weight: float = 0.30,
-    stepwise_weight: float = 0.25,
-    format_weight: float = 0.10,
-    require_valid_weight_sum: bool = True,
+    answer_weight: float = 1.0,
+    grounding_weight: float = 1.0,
+    stepwise_weight: float = 1.0,
+    format_weight: float = 1.0,
+    require_valid_weight_sum: bool = False,
     pred_coordinate_space: CoordinateSpace = "pixel",
     gold_coordinate_space: CoordinateSpace = "pixel",
     allow_missing_image_index: bool = True,
@@ -3148,6 +3149,9 @@ def compute_score(
     colqwen2_batch_size: int = 4,
 ) -> list[dict[str, Any]]:
     """Compute four-aspect rewards for an EasyR1 rollout batch.
+
+    The four aspect weights default to 1.0, giving an unnormalized sum in
+    [0, 4]. Set require_valid_weight_sum=True only for weights summing to 1.
 
     EasyR1's batch reward manager calls this function once with a list of
     dictionaries. Each dictionary contains response, response_length, and

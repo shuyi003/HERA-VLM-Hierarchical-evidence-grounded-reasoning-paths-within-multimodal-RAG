@@ -4,7 +4,9 @@ This document describes `compute_score` in the supplied full-reward Python file.
 
 ## Total and answer reward
 
-`R = clamp(0.35 A + 0.30 G + 0.25 P + 0.10 F)` in `[0, 1]`.
+`R = 1.0 A + 1.0 G + 1.0 P + 1.0 F` in `[0, 4]`.
+
+Each component remains in `[0, 1]`. The total is not clipped to 1 or divided by 4. The four aspect weights default to `1.0`, and `require_valid_weight_sum=false` allows this unnormalized sum. The optional sum-to-one check can still be enabled for normalized custom weights. Internal component weights below are unchanged.
 
 `A = 0.10 EM + 0.10 token_F1 + 0.80 semantic`.
 

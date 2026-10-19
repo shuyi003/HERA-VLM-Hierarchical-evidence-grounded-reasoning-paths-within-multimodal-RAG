@@ -59,8 +59,10 @@ The supplied RL YAML originally resumed an existing RL checkpoint and referenced
 With the full reward function's entry-point defaults:
 
 \[
-R = 0.35R_{\mathrm{answer}} + 0.30R_{\mathrm{ground}} + 0.25R_{\mathrm{path}} + 0.10R_{\mathrm{format}}.
+R = R_{\mathrm{answer}} + R_{\mathrm{ground}} + R_{\mathrm{path}} + R_{\mathrm{format}}.
 \]
+
+All four aspect weights are `1.0`. Each aspect remains in `[0, 1]`; the total reward is an unnormalized sum in `[0, 4]`.
 
 | Component | What it checks |
 | --- | --- |

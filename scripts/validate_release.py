@@ -31,8 +31,12 @@ def main():
             assert key in names, f'Unsupported reward keyword: {key}'
             values[key] = json.loads(value)
     assert values
-    for keys in [('answer_weight','grounding_weight','stepwise_weight','format_weight'),
-                 ('answer_exact_weight','answer_token_f1_weight','answer_semantic_weight'),
+    defaults = {arg.arg: ast.literal_eval(value) for arg, value in
+                zip(function.args.args[-len(function.args.defaults):], function.args.defaults)}
+    for key in ('answer_weight', 'grounding_weight', 'stepwise_weight', 'format_weight'):
+        assert values[key] == defaults[key] == 1.0
+    assert values['require_valid_weight_sum'] is defaults['require_valid_weight_sum'] is False
+    for keys in [('answer_exact_weight','answer_token_f1_weight','answer_semantic_weight'),
                  ('grounding_continuous_iou_weight','grounding_gold_coverage_weight',
                   'grounding_merged_gold_iou_weight','grounding_soft_threshold_weight',
                   'grounding_validity_weight')]:
