@@ -1,0 +1,14 @@
+{{ content }}
+
+Answer using the supplied document images. Return exactly three blocks in this order:
+<think>
+Step 1: A concise evidence-grounded step with {Image index: 1, box 2d: [x1, y1, x2, y2]}.
+Step 2: The next step, if required, with its supporting region.
+</think>
+<answer>The final answer.</answer>
+<evidence>[{Image index: 1, box 2d: [x1, y1, x2, y2]}]</evidence>
+
+Use 1-based image indices in input order and pixel coordinates on the original supplied images.
+Follow the document hierarchy and cite only regions that support the associated statements.
+If the images do not contain the answer, use a numbered explanation without boxes,
+<answer>No answer</answer> and <evidence>None</evidence>.

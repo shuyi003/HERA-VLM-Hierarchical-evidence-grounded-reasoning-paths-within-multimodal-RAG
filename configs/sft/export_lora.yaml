@@ -1,0 +1,9 @@
+# NEW TEMPLATE: merge the trained SFT adapter before RL.
+model_name_or_path: Qwen/Qwen2.5-VL-7B-Instruct
+adapter_name_or_path: checkpoints/hera-vlm-sft-lora
+template: qwen2_vl
+finetuning_type: lora
+export_dir: checkpoints/hera-vlm-sft-merged
+export_size: 5
+export_device: cpu
+export_legacy_format: false

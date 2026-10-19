@@ -1,0 +1,15 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+checkpoints/
+data/
+logs/
+wandb/
+*.safetensors
+*.pt
+*.pth
+*.parquet

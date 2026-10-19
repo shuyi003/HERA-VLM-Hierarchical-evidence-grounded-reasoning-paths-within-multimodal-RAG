@@ -1,0 +1,8 @@
+# Install into the EasyR1 environment without overriding its pinned stack blindly.
+torch
+transformers
+sentence-transformers
+Pillow
+# Optional when colqwen2_load_in_4bit=true:
+bitsandbytes
+accelerate

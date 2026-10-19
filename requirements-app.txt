@@ -1,0 +1,11 @@
+# Dependency inventory, not a tested lockfile. Select compatible versions together.
+torch
+transformers
+accelerate
+bitsandbytes
+sentence-transformers
+Pillow
+numpy
+PyMuPDF
+gradio
+peft

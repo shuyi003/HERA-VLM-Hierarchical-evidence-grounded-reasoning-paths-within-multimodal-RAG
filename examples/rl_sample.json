@@ -1,0 +1,7 @@
+{
+  "problem": "What width is required?",
+  "answer": "{\"gold_answer\": \"The required width is 1.2 m.\", \"gold_evidence\": [{\"image_index\": 1, \"bbox\": [100, 400, 800, 500]}], \"gold_steps\": [{\"step_index\": 1, \"text\": \"Locate the requirement.\", \"bboxes\": [{\"image_index\": 1, \"bbox\": [100, 200, 800, 300]}]}, {\"step_index\": 2, \"text\": \"Read the specified width.\", \"bboxes\": [{\"image_index\": 1, \"bbox\": [100, 400, 800, 500]}]}], \"image_sizes\": [{\"image_index\": 1, \"width\": 1000, \"height\": 1400}], \"image_paths\": [\"/absolute/path/to/page_001.png\"], \"is_no_answer\": false, \"pred_coordinate_space\": \"pixel\", \"gold_coordinate_space\": \"pixel\"}",
+  "images": [
+    "/absolute/path/to/page_001.png"
+  ]
+}
