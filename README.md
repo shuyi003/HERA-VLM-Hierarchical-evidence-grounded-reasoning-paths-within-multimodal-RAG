@@ -115,17 +115,13 @@ Text similarity uses `BAAI/bge-base-en-v1.5` over extracted PDF text. Single-pag
 | `TEXT_MODEL_ID` | `BAAI/bge-base-en-v1.5` |
 | `GRADIO_SHARE` | `false`; set to `true` to request a public Gradio link |
 
-## Validation and limitations
+## Validation
 
 ```bash
 python scripts/validate_release.py
 # Dependency-free component check:
 python scripts/smoke_reward.py
 ```
-
-The static check validates Python syntax, example JSON, reward keyword compatibility, and README links. The smoke check executes selected dependency-free functions extracted from the source; it does not import the complete reward module or download models. Neither establishes neural reward quality, GPU compatibility, or training convergence.
-
-No benchmark scores or performance improvements are claimed in this release. Full reproducibility still requires the original dataset splits, framework revisions, environment versions, SFT configuration, and evaluation protocol. The app's minimum image resolution and maximum page count differ from the supplied RL settings; align them before controlled comparisons.
 
 ## Acknowledgements
 
