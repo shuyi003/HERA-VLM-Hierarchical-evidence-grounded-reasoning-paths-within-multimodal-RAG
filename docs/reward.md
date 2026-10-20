@@ -80,4 +80,4 @@ See `examples/reward_input.json` and `examples/rl_sample.json`. Add `hierarchy_l
 
 EasyR1 receives numeric metrics including `overall`, `answer_accuracy`, `final_grounding`, `evidence_path`, `output_format`, `grounding_hybrid_iou`, both bonus scores, `step_validity`, `step_order_score`, and `step_accuracy_gate`. Per-sample failures produce `reward_error=1` and zero rewards. Invalid global settings raise before sample processing.
 
-The archived `configs/rl/order_only_reference.yaml` describes an earlier, separate ablation. Its referenced implementation is not included; use `configs/rl/full_reward.yaml` for these equations. Old overlap, soft-IoU-weight, and text/bbox order-matching arguments are rejected by the new entry-point signature.
+Use `configs/rl/full_reward.yaml` for these equations. Old overlap, soft-IoU-weight, and text/bbox order-matching arguments are rejected by the new entry-point signature.
