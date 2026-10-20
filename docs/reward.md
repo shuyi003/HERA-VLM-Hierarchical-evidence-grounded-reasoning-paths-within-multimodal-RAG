@@ -74,12 +74,6 @@ Matching uses the same semantic similarity function as answer scoring, with no e
 
 `[1, 2, 3]` has order validity `1`; `[2, 1, 3]` has validity `0.5`; `[3, 2, 1]` has validity `0`. Equal consecutive labels are permitted. There is no hierarchy-coverage bonus and no box-overlap penalty.
 
-### Boundary and missing-data conventions
-
-The excerpt defines order validity only for `N >= 2`. The implementation assigns `V_path=0` to an empty or single-step path. A single supported step may therefore earn `0.4` when the answer gate passes; an empty path earns zero. Empty statements invalidate their adjacent transitions. Below the accuracy gate, path reward is zero and expensive alignment inference is skipped.
-
-Unanswerable samples have no annotated evidence path and receive `R_path=0`. Their existing answer, no-box grounding, and format rules remain available. This explicit extension avoids granting an unanswerable sample a path reward by bypassing the accuracy gate.
-
 ## Data and diagnostics
 
 See `examples/reward_input.json` and `examples/rl_sample.json`. Add `hierarchy_level` to every annotated gold step; do not automatically label steps by their list positions. Keep `image_paths` accessible to all reward workers. Pixel coordinates and 1-based indices in input-image order remain the defaults.
