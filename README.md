@@ -4,9 +4,7 @@
 
 HERA-VLM combines multimodal retrieval with a Qwen2.5-VL-7B model adapted through **supervised fine-tuning (SFT) with LLaMA-Factory** and **GRPO reinforcement learning with EasyR1**. It is designed to answer document questions while returning structured reasoning steps and page-level bounding-box evidence.
 
-[中文说明](README.zh-CN.md) · [Training and data](docs/training.md) · [Reward specification](docs/reward.md) · [Release notes](docs/release-notes.md)
-
-> This repository packages the supplied reward implementation and PDF QA application, together with newly prepared training templates. Training data, model checkpoints, original SFT hyperparameters, and evaluation results are not included. The templates have not been validated by a full GPU training run.
+[Training and data](docs/training.md) · [Reward specification](docs/reward.md) · [Release notes](docs/release-notes.md)
 
 ## Overview
 
@@ -29,7 +27,7 @@ The training reward uses **ColQwen2** to assess reasoning-step/image-region alig
 ## What is included
 
 - A batch reward function for answer accuracy, final evidence grounding, stepwise attribution, and output format.
-- A GRPO template whose reward arguments match the supplied full reward function.
+- A GRPO template whose reward arguments match the manuscript-aligned full reward function.
 - The supplied order-only ablation configuration with portable paths, retained as reference.
 - LLaMA-Factory SFT and LoRA export templates, plus illustrative data schemas.
 - A Gradio PDF QA application with single-page and multiple-page inference, ranking inspection, and evidence visualization.
@@ -38,10 +36,11 @@ The training reward uses **ColQwen2** to assess reasoning-step/image-region alig
 app/                 PDF retrieval, reranking, inference, and visualization
 configs/sft/         New SFT and LoRA export templates
 configs/rl/          Full reward template and order-only reference
-reward_functions/    Supplied four-aspect reward implementation
+reward_functions/    Manuscript-aligned four-aspect reward implementation
 prompts/             New structured-output prompt template
 examples/            Synthetic schema examples; no real training data
-scripts/             Static validation and an offline reward smoke check
+scripts/             Static validation and reward test launcher
+tests/               Equation and batch integration tests
 docs/               Training guide, reward details, and provenance
 ```
 
@@ -62,16 +61,16 @@ With the full reward function's entry-point defaults:
 R = R_{\mathrm{answer}} + R_{\mathrm{ground}} + R_{\mathrm{path}} + R_{\mathrm{format}}.
 \]
 
-All four aspect weights are `1.0`. Each aspect remains in `[0, 1]`; the total reward is an unnormalized sum in `[0, 4]`.
+All four aspect weights are `1.0`. Grounding follows `0.9 S_h-IoU + 0.1 (S_cov + S_merge)` and can reach `1.1`; the total reward is an unnormalized sum in `[0, 4.1]`.
 
 | Component | What it checks |
 | --- | --- |
 | Answer | Exact match, token F1, and sentence-embedding similarity |
-| Grounding | Matched IoU, gold coverage, merged-gold IoU, soft IoU, and coordinate validity |
-| Path | ColQwen2 support for cited regions, box overlap, and alignment with the annotated step order; gated by answer accuracy |
+| Grounding | Hybrid IoU (0 below/equal to 0.1, raw IoU between thresholds, 1 at/above 0.5), plus coverage and merged-evidence bonuses |
+| Path | Answer gate ≥ 0.6, then 0.4 × proportion of valid ColQwen2-aligned steps + 0.6 × proportion of non-decreasing hierarchy transitions |
 | Format | Exactly one ordered `<think>`, `<answer>`, and `<evidence>` block, numbered steps, and parseable boxes for answerable examples |
 
-The order score is **dense**, combining monotonic transitions and coverage. It is not a binary all-steps-correct test. The implementation includes separate rules for unanswerable examples. See [the exact formulas and caveats](docs/reward.md).
+Each reference step carries a `hierarchy_level` of `1` (section), `2` (subsection), or `3` (detailed evidence). Predicted steps are matched to reference steps by text semantic similarity. Step evidence passes at ColQwen2 similarity ≥ `0.5`; the order score is the fraction of adjacent non-decreasing level transitions. See [the equations and implementation conventions](docs/reward.md).
 
 Example output (illustrative only):
 
@@ -119,7 +118,7 @@ Text similarity uses `BAAI/bge-base-en-v1.5` over extracted PDF text. Single-pag
 
 ```bash
 python scripts/validate_release.py
-# Dependency-free component check:
+# Equation and batch tests (requires Pillow; neural encoders are mocked):
 python scripts/smoke_reward.py
 ```
 

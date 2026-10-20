@@ -35,7 +35,7 @@ algorithm:
   online_filtering: false
   filter_key: overall
   filter_low: 0.01
-  filter_high: 3.99
+  filter_high: 4.09
 
 worker:
   actor:
@@ -111,13 +111,14 @@ worker:
       pred_coordinate_space: "pixel"
       gold_coordinate_space: "pixel"
       allow_missing_image_index: true
-      grounding_continuous_iou_weight: 0.5
-      grounding_gold_coverage_weight: 0.05
-      grounding_merged_gold_iou_weight: 0.05
-      grounding_soft_threshold_weight: 0.3
-      grounding_validity_weight: 0.1
-      grounding_soft_iou_low: 0.1
-      grounding_soft_iou_high: 0.5
+      grounding_hybrid_iou_weight: 0.9
+      grounding_extra_bonus_weight: 0.1
+      grounding_iou_low_threshold: 0.1
+      grounding_iou_high_threshold: 0.5
+      grounding_coverage_threshold: 0.95
+      grounding_coverage_max_area_ratio: 1.25
+      grounding_merged_iou_threshold: 0.5
+      grounding_merge_max_gap: 0.02
       answer_exact_weight: 0.1
       answer_token_f1_weight: 0.1
       answer_semantic_weight: 0.8
@@ -125,11 +126,10 @@ worker:
       semantic_model_name_or_path: "sentence-transformers/all-MiniLM-L6-v2"
       semantic_device: "cpu"
       semantic_local_files_only: false
-      step_similarity_threshold: 0.45
-      step_overlap_threshold: 0.5
-      step_accuracy_gate_threshold: 0.5
-      step_order_text_weight: 0.7
-      step_order_bbox_weight: 0.3
+      step_similarity_threshold: 0.5
+      step_accuracy_gate_threshold: 0.6
+      step_validity_weight: 0.4
+      path_order_weight: 0.6
       colqwen2_model_name_or_path: "vidore/colqwen2-v1.0-hf"
       colqwen2_device: "cuda"
       colqwen2_dtype: "bfloat16"

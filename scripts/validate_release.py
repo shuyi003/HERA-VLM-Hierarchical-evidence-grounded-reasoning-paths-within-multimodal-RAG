@@ -36,11 +36,15 @@ def main():
     for key in ('answer_weight', 'grounding_weight', 'stepwise_weight', 'format_weight'):
         assert values[key] == defaults[key] == 1.0
     assert values['require_valid_weight_sum'] is defaults['require_valid_weight_sum'] is False
-    for keys in [('answer_exact_weight','answer_token_f1_weight','answer_semantic_weight'),
-                 ('grounding_continuous_iou_weight','grounding_gold_coverage_weight',
-                  'grounding_merged_gold_iou_weight','grounding_soft_threshold_weight',
-                  'grounding_validity_weight')]:
+    for keys in [('answer_exact_weight', 'answer_token_f1_weight', 'answer_semantic_weight'),
+                 ('step_validity_weight', 'path_order_weight')]:
         assert abs(sum(values[k] for k in keys) - 1) < 1e-8
+    for key, expected in {'grounding_hybrid_iou_weight': .9, 'grounding_extra_bonus_weight': .1,
+                          'grounding_iou_low_threshold': .1, 'grounding_iou_high_threshold': .5,
+                          'step_similarity_threshold': .5, 'step_accuracy_gate_threshold': .6,
+                          'step_validity_weight': .4, 'path_order_weight': .6}.items():
+        assert values[key] == defaults[key] == expected
+    assert all(step['hierarchy_level'] in (1, 2, 3) for step in gt['gold_steps'])
     for path in ROOT.rglob('*.md'):
         for target in re.findall(r'\]\(([^)]+)\)', path.read_text()):
             if '://' not in target and not target.startswith('#'):

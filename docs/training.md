@@ -48,7 +48,7 @@ Create `data/rl/train.parquet` and `data/rl/valid.parquet`. Each row has:
 
 - `gold_answer`: reference answer.
 - `gold_evidence`: list of `{image_index, bbox}` objects.
-- `gold_steps`: ordered `{step_index, text, bboxes}` objects.
+- `gold_steps`: ordered `{step_index, hierarchy_level, text, bboxes}` objects; explicit integer hierarchy levels are `1` (section), `2` (subsection), and `3` (detailed evidence).
 - `image_sizes`: `{image_index, width, height}` records.
 - `image_paths`: ordered image file paths accessible to every reward worker.
 - `is_no_answer`: boolean, not a string.
@@ -67,6 +67,8 @@ python -m verl.trainer.main config=configs/rl/full_reward.yaml
 ```
 
 This launcher follows the [official EasyR1 Qwen2.5-VL example](https://github.com/hiyouga/EasyR1/blob/main/examples/qwen2_5_vl_7b_geo3k_grpo.sh). Verify the selected revision supports the supplied YAML fields, including actor LoRA settings and `reward_function_kwargs`.
+
+The full-reward configuration follows manuscript Eqs. 8–16 with a 0.6 answer gate, a 0.5 step-alignment threshold, and 0.4/0.6 step/order weights. Coverage/adjacency thresholds are documented implementation defaults in [the reward specification](reward.md). Add explicit `hierarchy_level` annotations to existing datasets before using it.
 
 The new configuration retains the supplied template's rollout settings: four samples per prompt, temperature 0.9, top-p 0.95, GRPO, KL coefficient 0.01, and actor LoRA rank 8. It changes the checkpoint path, prompt path, reward module, and reward arguments to connect the SFT output with the full reward. It uses a local file logger by default. The full reward can consume substantially more memory than the order-only ablation.
 

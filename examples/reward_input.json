@@ -28,7 +28,8 @@
                 300
               ]
             }
-          ]
+          ],
+          "hierarchy_level": 1
         },
         {
           "step_index": 2,
@@ -43,7 +44,8 @@
                 500
               ]
             }
-          ]
+          ],
+          "hierarchy_level": 2
         }
       ],
       "image_sizes": [

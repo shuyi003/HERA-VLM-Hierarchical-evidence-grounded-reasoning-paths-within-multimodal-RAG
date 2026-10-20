@@ -1,51 +1,89 @@
 # Reward specification
 
-This document describes `compute_score` in the supplied full-reward Python file. Entry-point defaults take precedence over different helper-function defaults or comments.
+The batch entry point `compute_score` implements the evidence grounding and hierarchical reasoning path expressions in manuscript Sections 3.3.3–3.3.4 (Eqs. 8–16).
 
 ## Total and answer reward
 
-`R = 1.0 A + 1.0 G + 1.0 P + 1.0 F` in `[0, 4]`.
+`R = R_accuracy + R_ground + R_path + R_format`.
 
-Each component remains in `[0, 1]`. The total is not clipped to 1 or divided by 4. The four aspect weights default to `1.0`, and `require_valid_weight_sum=false` allows this unnormalized sum. The optional sum-to-one check can still be enabled for normalized custom weights. Internal component weights below are unchanged.
+All four outer weights are `1.0`. Answer accuracy remains `0.10 EM + 0.10 token_F1 + 0.80 semantic`, using the existing sentence encoder and normalization. Output-format scoring is unchanged. The supplied manuscript excerpt does not redefine these two components.
 
-`A = 0.10 EM + 0.10 token_F1 + 0.80 semantic`.
+The grounding formula permits a maximum of **1.1**, because both bonuses may be 1. Thus the total has range **[0, 4.1]** with the default weights. There is no clipping or averaging of the total. `require_valid_weight_sum=false` permits unit outer weights.
 
-Answer text is extracted from `<answer>`. Text normalization lowercases, removes punctuation and English articles, and collapses whitespace. SentenceTransformer cosine is mapped with `(cosine + 1) / 2` and clamped. The default encoder is `sentence-transformers/all-MiniLM-L6-v2`. The original order-only YAML uses different answer weights (`0.10/0.30/0.60`); those are not the full Python entry-point defaults.
+## Evidence grounding: Eqs. 8–10
 
-## Final evidence grounding
+For a predicted box and its matched reference box:
 
-`G = 0.50 IoU_match + 0.05 coverage + 0.05 IoU_merged + 0.30 soft_IoU + 0.10 validity`.
+`u = area(intersection) / area(union)`.
 
-Matched IoU uses one-to-one matching; coverage allows one predicted box to cover multiple gold boxes. Gold boxes are enclosed by a merged box per image for the merged term. The soft term uses the maximum of matched and merged IoU, with lower/upper thresholds `0.10/0.50`. Validity checks normalized coordinates. These terms are scores, not all binary indicators. The source file also retains an older strict-grounding helper, but `_score_one` calls `final_grounding_score`.
+```text
+S_h-IoU(u) = 0    if u <= 0.1
+             u    if 0.1 < u < 0.5
+             1    if u >= 0.5
 
-## Evidence path
+R_ground = 0.9 S_h-IoU + 0.1 (S_cov + S_merge)
+```
 
-For answerable examples with reasoning/evidence pairs:
+At `u=0.5`, the implementation follows the manuscript prose (“reaching 0.5”) and the IoU@0.5 convention. The intermediate reward is the original IoU, not a linear rescaling between thresholds. There is no additional coordinate-validity reward or extra-box penalty.
 
-`P = gate × (support_pass + overlap_pass + order_score) / 3`.
+### Operational definitions for bonuses and multiple boxes
 
-- `gate = 1[A >= 0.50]`.
-- `support_pass = 1[min(step_crop_text_cosines) >= 0.45]` when every pair can be cropped and scored; otherwise zero.
-- `overlap_pass = 1[max_pairwise_bbox_IoU <= 0.50]` using the entry-point default.
-- Step support uses mean-pooled, normalized ColQwen2 embeddings and cosine similarity, not the application's ColPali retrieval score.
-- Each predicted step is matched to a gold step with `0.70 × text_score + 0.30 × bbox_score`. The text matching score itself combines exact match, token F1, and semantic similarity.
-- `order_score = 0.70 × monotonic_transition_fraction + 0.30 × coverage`.
-- `coverage = distinct_matched_positions / min(number_of_gold_steps, number_of_predicted_steps)`.
+The manuscript describes coverage and merged-evidence bonuses qualitatively. The following configurable numerical rules make those descriptions executable; these are implementation defaults, not additional thresholds stated in the manuscript.
 
-A single matched step can get full monotonic and coverage scores even when the gold path is longer. Full hierarchy completion is logged separately; it is not an extra multiplier. Missing images zero the support term but do not necessarily zero the other path terms. Missing gold steps affect the order term. Thus a high reward does not prove a complete or correct reasoning path.
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `grounding_coverage_threshold` | 0.95 | Minimum fraction of a gold box covered by a prediction |
+| `grounding_coverage_max_area_ratio` | 1.25 | Maximum predicted/gold area ratio for the coverage bonus |
+| `grounding_merged_iou_threshold` | 0.50 | Minimum overlap with a merged gold region |
+| `grounding_merge_max_gap` | 0.02 | Maximum separation in each normalized image axis for adjacent gold regions |
 
-The original helper docstring says it does not compare intermediate text to gold text. That statement only describes crop support: the actual order-alignment code does compare predicted and annotated step text.
+For multiple evidence boxes:
 
-## Format and unanswerable examples
+1. Match predictions and gold regions greedily by descending IoU, with each region used at most once. Apply the hybrid function **to each pair**, then average over all gold regions. Unmatched gold regions contribute zero.
+2. `S_cov` is the fraction of gold regions for which a same-page prediction satisfies both the coverage threshold and area-ratio limit. A prediction may cover more than one gold region.
+3. Group adjacent gold regions on the same page using connected components. Two regions are adjacent when the maximum of their horizontal and vertical gaps is at most `grounding_merge_max_gap`; gaps use coordinates normalized by the corresponding page dimensions. Each group must contain at least two regions.
+4. Enclose each group in a bounding box. `S_merge` is the fraction of these merged regions with a one-to-one prediction match meeting the merged IoU threshold. A singleton or absence of adjacent groups receives no merged bonus.
 
-Format requires exactly one `<think>`, `<answer>`, and `<evidence>` block in that order, nonempty contents, and at least one parsed numbered step. Answerable examples additionally need parseable boxes in reasoning and final evidence. It does not enforce a box on every individual step.
+Groups never combine different pages. Both bonuses may be awarded simultaneously. A sample with one exact predicted/gold box receives `0.9 + 0.1 = 1.0`; qualifying simultaneous bonuses can produce `1.1`.
 
-For `is_no_answer=true`, answer scoring uses the implementation's recognized no-answer strings, grounding rewards omission of boxes, and the path branch rewards omission of reasoning/box pairs without the normal accuracy gate. A nonempty `<evidence>None</evidence>` and a numbered unanswerable explanation can satisfy the format rule.
+## Hierarchical reasoning path: Eqs. 11–16
 
-## Runtime and diagnostics
+```text
+G_accuracy = 1[R_accuracy >= 0.6]
+v_i        = 1[ColQwen2_similarity(statement_i, crop_i) >= 0.5]
+V_step     = sum(v_i) / N
 
-EasyR1 supplies a batch of dictionaries with `response` and `ground_truth`; the function returns one dictionary per sample with `overall`, the four component scores, and detailed metrics. Store image paths inside the ground-truth payload so the reward worker can load crops independently of rollout image decoding.
+j_i        = argmax_j semantic_similarity(statement_i, reference_statement_j)
+level_i    = gold_steps[j_i].hierarchy_level
+V_path     = sum(1[level_(i+1) >= level_i]) / (N - 1), for N >= 2
 
-The source catches per-sample exceptions and returns zero reward with `reward_error=1`. Monitor that metric and worker logs before interpreting low scores. The Python default is `semantic_local_files_only=true`; the new full-reward template explicitly sets it to `false` for initial model acquisition. For offline training, pre-cache the encoder and set it back to `true`.
+R_path     = G_accuracy * (0.4 V_step + 0.6 V_path)
+```
 
-The reference order-only YAML refers to an unavailable `conreg_four_aspect_reward_order_only_light.py`. It uses different grounding argument names and documents `P = gate × binary_order`. It must not be paired with the full reward function unchanged.
+ColQwen2 crop/text similarity retains the implementation's cosine between mean-pooled, L2-normalized multi-vector embeddings. It is not the application's ColPali retrieval score. A similarity equal to `0.5` passes.
+
+Step validity is the **fraction of predicted steps**, not an all-or-nothing minimum over the whole path. Missing citations, missing page images, and invalid crops count as failed steps in the denominator. The manuscript specifies one region per step; when a step cites multiple regions, the implemented extension requires every citation to pass and still counts that step only once.
+
+Reference steps must carry an explicit integer `hierarchy_level`:
+
+- `1`: section;
+- `2`: subsection;
+- `3`: detailed evidence.
+
+Matching uses the same semantic similarity function as answer scoring, with no exact-match, token-F1, or bounding-box term added to the matching score. Reference-list position is not a substitute for a hierarchy label. Ties select the first highest-scoring reference. Missing or invalid labels raise an error for order evaluation rather than silently being inferred.
+
+`[1, 2, 3]` has order validity `1`; `[2, 1, 3]` has validity `0.5`; `[3, 2, 1]` has validity `0`. Equal consecutive labels are permitted. There is no hierarchy-coverage bonus and no box-overlap penalty.
+
+### Boundary and missing-data conventions
+
+The excerpt defines order validity only for `N >= 2`. The implementation assigns `V_path=0` to an empty or single-step path. A single supported step may therefore earn `0.4` when the answer gate passes; an empty path earns zero. Empty statements invalidate their adjacent transitions. Below the accuracy gate, path reward is zero and expensive alignment inference is skipped.
+
+Unanswerable samples have no annotated evidence path and receive `R_path=0`. Their existing answer, no-box grounding, and format rules remain available. This explicit extension avoids granting an unanswerable sample a path reward by bypassing the accuracy gate.
+
+## Data and diagnostics
+
+See `examples/reward_input.json` and `examples/rl_sample.json`. Add `hierarchy_level` to every annotated gold step; do not automatically label steps by their list positions. Keep `image_paths` accessible to all reward workers. Pixel coordinates and 1-based indices in input-image order remain the defaults.
+
+EasyR1 receives numeric metrics including `overall`, `answer_accuracy`, `final_grounding`, `evidence_path`, `output_format`, `grounding_hybrid_iou`, both bonus scores, `step_validity`, `step_order_score`, and `step_accuracy_gate`. Per-sample failures produce `reward_error=1` and zero rewards. Invalid global settings raise before sample processing.
+
+The archived `configs/rl/order_only_reference.yaml` describes an earlier, separate ablation. Its referenced implementation is not included; use `configs/rl/full_reward.yaml` for these equations. Old overlap, soft-IoU-weight, and text/bbox order-matching arguments are rejected by the new entry-point signature.
