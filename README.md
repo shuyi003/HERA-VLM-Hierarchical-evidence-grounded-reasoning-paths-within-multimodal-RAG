@@ -4,7 +4,7 @@
 
 HERA-VLM combines multimodal retrieval with a Qwen2.5-VL-7B model adapted through **supervised fine-tuning (SFT) with LLaMA-Factory** and **GRPO reinforcement learning with EasyR1**. It is designed to answer document questions while returning structured reasoning steps and page-level bounding-box evidence.
 
-[Training and data](docs/training.md) · [Reward specification](docs/reward.md) · [Release notes](docs/release-notes.md)
+[Training and data](docs/training.md) · [Reward specification](docs/reward.md)
 
 ## Overview
 
