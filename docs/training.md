@@ -81,7 +81,3 @@ For offline training, pre-download the required models, set local model paths as
 Use the checkpoint export/merging procedure for your installed EasyR1 version. A raw sharded actor checkpoint or LoRA-only directory is not sufficient for the application. Point `QWEN_MODEL_PATH` to the full Hugging Face checkpoint containing processor/tokenizer files.
 
 The app defaults to three pages in multiple-page mode while RL rollout limits images to two. Its `QWEN_MIN_PIXELS=3136` also differs from the RL template's `min_pixels=262144`. Match inference and training preprocessing for controlled evaluations; these settings were not silently unified in this release.
-
-## Evaluation status
-
-No real dataset, run logs, held-out predictions, or benchmark measurements were supplied. Report answer EM/F1, evidence IoU, path-order and crop-support diagnostics, format rate, and latency only after evaluating a fixed held-out set. Compare SFT-only, full-reward GRPO, and order-only GRPO using documented data splits and settings; do not infer gains from reward formulas alone.
