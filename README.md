@@ -8,9 +8,9 @@
 
 ```mermaid
 flowchart LR
-  A[Annotated document images] --> B[SFT · LLaMA-Factory]
+  A[Annotated document images] --> B[SFT]
   B --> C[Merged Qwen2.5-VL checkpoint]
-  C --> D[GRPO · EasyR1]
+  C --> D[GRPO]
   E[Four-aspect reward] --> D
   D --> F[Adapted VLM]
   G[PDF + question] --> H[ColPali page retrieval]
