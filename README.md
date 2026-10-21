@@ -95,13 +95,7 @@ python app/app_revised_weighted_rerank_single_or_multiple.py
 
 The checkpoint directory must include model weights, tokenizer, and processor assets. An unmerged LoRA adapter alone is insufficient for the current loader. CUDA inference uses bitsandbytes 4-bit quantization for Qwen; ColPali and the text encoder also consume memory. CPU loading is present but practical latency and memory requirements have not been benchmarked.
 
-The app renders PDF pages at 200 DPI, retrieves five candidates by default, and reranks them using:
-
-\[
-s(p)=0.8\,\operatorname{minmax}(s_{\mathrm{ColPali}}(p))+0.2\,\operatorname{minmax}(s_{\mathrm{text}}(p)).
-\]
-
-Text similarity uses `BAAI/bge-base-en-v1.5` over extracted PDF text. Single-page inference defaults to one page; multiple-page inference defaults to three. Scanned PDFs without extractable text receive a placeholder in the text reranker; OCR is not included.
+The app renders PDF pages at 200 DPI, retrieves five candidates by default, and reranks them. Text similarity uses `BAAI/bge-base-en-v1.5` over extracted summarized. Single-page inference defaults to one page; multiple-page inference defaults to three. Scanned PDFs without extractable text receive a placeholder in the text reranker.
 
 | Environment variable | Default / purpose |
 | --- | --- |
