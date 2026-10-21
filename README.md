@@ -49,7 +49,7 @@ docs/               Training guide, reward details, and provenance
 3. Use that checkpoint to initialize GRPO and optimize the four-aspect reward.
 4. Export the selected RL checkpoint in Hugging Face format, including its processor, and load it in the application.
 
-The supplied RL YAML originally resumed an existing RL checkpoint and referenced an **order-only** reward file that was not supplied. `configs/rl/full_reward.yaml` instead starts from an SFT checkpoint and uses the full reward implementation. It is an adapted template, not the exact configuration of an existing experiment. See [training instructions](docs/training.md) for commands and data preparation.
+`configs/rl/full_reward.yaml` starts from an SFT checkpoint and uses the full reward implementation. See [training instructions](docs/training.md) for commands and data preparation.
 
 ## Four-aspect reward
 
