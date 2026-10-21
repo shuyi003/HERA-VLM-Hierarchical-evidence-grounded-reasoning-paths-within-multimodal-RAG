@@ -2,8 +2,6 @@
 
 **Hierarchical evidence-grounded reasoning paths within multimodal RAG**
 
-HERA-VLM combines multimodal retrieval with a Qwen2.5-VL-7B model adapted through **supervised fine-tuning (SFT) with LLaMA-Factory** and **GRPO reinforcement learning with EasyR1**. It is designed to answer document questions while returning structured reasoning steps and page-level bounding-box evidence.
-
 [Training and data](docs/training.md) · [Reward specification](docs/reward.md)
 
 ## Overview
@@ -124,4 +122,4 @@ python scripts/smoke_reward.py
 
 ## Acknowledgements
 
-Built around [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory), [EasyR1](https://github.com/hiyouga/EasyR1), [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct), [ColPali](https://huggingface.co/vidore/colpali-v1.2-hf), and [ColQwen2](https://huggingface.co/vidore/colqwen2-v1.0-hf). Framework usage follows their official documentation; dependencies and model assets retain their respective licenses. This repository is licensed under the [MIT License](LICENSE), retained from the existing GitHub repository.
+Built around [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct), [ColPali](https://huggingface.co/vidore/colpali-v1.2-hf), and [ColQwen2](https://huggingface.co/vidore/colqwen2-v1.0-hf). Framework usage follows their official documentation; dependencies and model assets retain their respective licenses. This repository is licensed under the [MIT License](LICENSE), retained from the existing GitHub repository.
