@@ -55,11 +55,9 @@ docs/               Training guide, reward details, and provenance
 
 With the full reward function's entry-point defaults:
 
-\[
+$$
 R = R_{\mathrm{answer}} + R_{\mathrm{ground}} + R_{\mathrm{path}} + R_{\mathrm{format}}.
-\]
-
-All four aspect weights are `1.0`. Grounding follows `0.9 S_h-IoU + 0.1 (S_cov + S_merge)` and can reach `1.1`; the total reward is an unnormalized sum in `[0, 4.1]`.
+$$
 
 | Component | What it checks |
 | --- | --- |
