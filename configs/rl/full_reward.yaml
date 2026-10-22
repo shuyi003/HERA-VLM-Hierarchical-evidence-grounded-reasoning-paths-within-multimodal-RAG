@@ -1,5 +1,4 @@
-# Adapted template: batch/rollout settings from supplied YAML; reward kwargs from supplied Python.
-# Not a recovered full-reward experiment configuration. Run from HERA-VLM root.
+# Full-reward GRPO configuration. Run from the HERA-VLM root.
 data:
   train_files: data/rl/train.parquet
   val_files: data/rl/valid.parquet

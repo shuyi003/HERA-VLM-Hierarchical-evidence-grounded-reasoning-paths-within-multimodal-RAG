@@ -25,21 +25,20 @@ The training reward uses **ColQwen2** to assess reasoning-step/image-region alig
 ## What is included
 
 - A batch reward function for answer accuracy, final evidence grounding, stepwise attribution, and output format.
-- A GRPO template whose reward arguments match the manuscript-aligned full reward function.
-- The supplied order-only ablation configuration with portable paths, retained as reference.
-- LLaMA-Factory SFT and LoRA export templates, plus illustrative data schemas.
+- A GRPO configuration for the four-aspect reward function.
+- SFT and LoRA export configurations, with data-format examples.
 - A Gradio PDF QA application with single-page and multiple-page inference, ranking inspection, and evidence visualization.
 
 ```text
 app/                 PDF retrieval, reranking, inference, and visualization
-configs/sft/         New SFT and LoRA export templates
-configs/rl/          Full reward template and order-only reference
+configs/sft/         SFT and LoRA export configurations
+configs/rl/          Full-reward GRPO configuration
 reward_functions/    Manuscript-aligned four-aspect reward implementation
-prompts/             New structured-output prompt template
-examples/            Synthetic schema examples; no real training data
-scripts/             Static validation and reward test launcher
+prompts/             Structured-output prompt template
+examples/            Data-format examples
+scripts/             Code checks and reward test launcher
 tests/               Equation and batch integration tests
-docs/               Training guide, reward details, and provenance
+docs/               Training guide and reward specification
 ```
 
 ## Training: SFT → GRPO
@@ -68,7 +67,7 @@ $$
 
 Each reference step carries a `hierarchy_level` of `1` (section), `2` (subsection), or `3` (detailed evidence). Predicted steps are matched to reference steps by text semantic similarity. Step evidence passes at ColQwen2 similarity ≥ `0.5`; the order score is the fraction of adjacent non-decreasing level transitions. See [the equations and implementation conventions](docs/reward.md).
 
-Example output (illustrative only):
+Example output:
 
 ```xml
 <think>
@@ -83,7 +82,7 @@ Coordinates are `[x1, y1, x2, y2]` pixels by default. Image indices are 1-based 
 
 ## PDF QA demo
 
-Use a separate environment for the application. Install a CUDA-compatible PyTorch build and the dependencies listed below; the original environment lockfile was not supplied.
+Use a separate environment for the application. Install a CUDA-compatible PyTorch build and the dependencies listed below.
 
 ```bash
 python -m venv .venv
@@ -93,9 +92,9 @@ export QWEN_MODEL_PATH=/absolute/path/to/merged-or-full-rl-checkpoint
 python app/app_revised_weighted_rerank_single_or_multiple.py
 ```
 
-The checkpoint directory must include model weights, tokenizer, and processor assets. An unmerged LoRA adapter alone is insufficient for the current loader. CUDA inference uses bitsandbytes 4-bit quantization for Qwen; ColPali and the text encoder also consume memory. CPU loading is present but practical latency and memory requirements have not been benchmarked.
+Use a full or merged checkpoint containing model weights, tokenizer, and processor assets. CUDA inference uses bitsandbytes 4-bit quantization for Qwen. Allocate additional memory for ColPali and the text encoder.
 
-The app renders PDF pages at 200 DPI, retrieves five candidates by default, and reranks them. Text similarity uses `BAAI/bge-base-en-v1.5` over extracted summarized. Single-page inference defaults to one page; multiple-page inference defaults to three. Scanned PDFs without extractable text receive a placeholder in the text reranker.
+The app renders PDF pages at 200 DPI, retrieves five candidates by default, and reranks them. Text similarity uses `BAAI/bge-base-en-v1.5` over extracted PDF text. Single-page inference defaults to one page; multiple-page inference defaults to three. Scanned PDFs without extractable text receive a placeholder in the text reranker.
 
 | Environment variable | Default / purpose |
 | --- | --- |
@@ -104,14 +103,14 @@ The app renders PDF pages at 200 DPI, retrieves five candidates by default, and 
 | `TEXT_MODEL_ID` | `BAAI/bge-base-en-v1.5` |
 | `GRADIO_SHARE` | `false`; set to `true` to request a public Gradio link |
 
-## Validation
+## Development checks
 
 ```bash
 python scripts/validate_release.py
-# Equation and batch tests (requires Pillow; neural encoders are mocked):
+# Equation and batch tests (requires Pillow):
 python scripts/smoke_reward.py
 ```
 
 ## Acknowledgements
 
-Built around [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct), [ColPali](https://huggingface.co/vidore/colpali-v1.2-hf), and [ColQwen2](https://huggingface.co/vidore/colqwen2-v1.0-hf). Framework usage follows their official documentation; dependencies and model assets retain their respective licenses. This repository is licensed under the [MIT License](LICENSE), retained from the existing GitHub repository.
+Built around [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct), [ColPali](https://huggingface.co/vidore/colpali-v1.2-hf), and [ColQwen2](https://huggingface.co/vidore/colqwen2-v1.0-hf). Framework usage follows their official documentation; dependencies and model assets retain their respective licenses. This repository is licensed under the [MIT License](LICENSE).

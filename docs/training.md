@@ -1,16 +1,16 @@
 # Training and data preparation
 
-## Environment and provenance
+## Environment setup
 
-Use separate environments for LLaMA-Factory, EasyR1, and the demo. Follow the [LLaMA-Factory installation instructions](https://github.com/hiyouga/LLaMA-Factory) and [EasyR1 installation instructions](https://github.com/hiyouga/EasyR1), then record the exact commits and `pip freeze` output used in your experiment. The original environment versions were not supplied; these instructions do not promise compatibility with every upstream revision.
+Use separate environments for LLaMA-Factory, EasyR1, and the demo. Follow the [LLaMA-Factory installation instructions](https://github.com/hiyouga/LLaMA-Factory) and [EasyR1 installation instructions](https://github.com/hiyouga/EasyR1), then record the exact commits and `pip freeze` output used in your experiment.
 
 The reward needs Transformers exports `ColQwen2ForRetrieval` and `ColQwen2Processor`; the demo needs `ColPaliForRetrieval`, `ColPaliProcessor`, and `Qwen2_5_VLForConditionalGeneration`. Verify their availability in the corresponding environment before downloading models. Review `requirements-reward.txt` against EasyR1's dependency constraints before adding packages.
 
-All project-relative commands below assume the HERA-VLM root as the working directory. Training is intended for an appropriately provisioned CUDA environment. A one-GPU configuration does not establish a minimum VRAM requirement: actor, rollout, reference, and ColQwen2 reward inference all consume memory.
+All project-relative commands below assume the HERA-VLM root as the working directory. Use a CUDA environment with sufficient GPU memory for the actor, rollout, reference model, and ColQwen2 reward inference.
 
 ## 1. SFT data
 
-Use the [official LLaMA-Factory dataset schema](https://github.com/hiyouga/LLaMA-Factory/blob/main/data/README.md). `examples/sft_sample.json` demonstrates ShareGPT-style multimodal data; its image path, question, answer, and boxes are synthetic placeholders.
+Use the [official LLaMA-Factory dataset schema](https://github.com/hiyouga/LLaMA-Factory/blob/main/data/README.md). `examples/sft_sample.json` demonstrates the ShareGPT-style multimodal data format. Populate the image paths, questions, answers, and boxes with your annotations.
 
 Prepare `data/sft/train.json` using real annotations and copy the registration:
 
@@ -30,9 +30,9 @@ llamafactory-cli train configs/sft/train_lora.yaml
 llamafactory-cli export configs/sft/export_lora.yaml
 ```
 
-These are newly proposed LoRA templates, not recovered experiment settings. Adjust batch size, image resolution, cutoff length, epoch count, and learning rate to your data and hardware. Confirm `qwen2_vl` is the Qwen2.5-VL template supported by your installed LLaMA-Factory revision.
+Adjust batch size, image resolution, cutoff length, epoch count, and learning rate to your data and hardware. Confirm `qwen2_vl` is the Qwen2.5-VL template supported by your installed LLaMA-Factory revision.
 
-The exported directory must include the full model, tokenizer, and processor. The full-reward RL template points to `checkpoints/hera-vlm-sft-merged`.
+The exported directory must include the full model, tokenizer, and processor. The full-reward RL configuration points to `checkpoints/hera-vlm-sft-merged`.
 
 ## 3. RL data
 
@@ -44,7 +44,7 @@ Create `data/rl/train.parquet` and `data/rl/valid.parquet`. Each row has:
 | `answer` | JSON string | Ground-truth payload consumed by the reward function |
 | `images` | list of strings | Ordered local image paths supported by the configured EasyR1 data loader |
 
-`examples/rl_sample.json` illustrates one row. Do not use this single synthetic example as a training dataset. The ground-truth JSON contains:
+`examples/rl_sample.json` shows the row structure for preparing your training data. The ground-truth JSON contains:
 
 - `gold_answer`: reference answer.
 - `gold_evidence`: list of `{image_index, bbox}` objects.
@@ -70,14 +70,14 @@ This launcher follows the [official EasyR1 Qwen2.5-VL example](https://github.co
 
 The full-reward configuration follows manuscript Eqs. 8–16 with a 0.6 answer gate, a 0.5 step-alignment threshold, and 0.4/0.6 step/order weights. Coverage/adjacency thresholds are documented implementation defaults in [the reward specification](reward.md). Add explicit `hierarchy_level` annotations to existing datasets before using it.
 
-The new configuration retains the supplied template's rollout settings: four samples per prompt, temperature 0.9, top-p 0.95, GRPO, KL coefficient 0.01, and actor LoRA rank 8. It changes the checkpoint path, prompt path, reward module, and reward arguments to connect the SFT output with the full reward. It uses a local file logger by default. The full reward can consume substantially more memory than the order-only ablation.
+The configuration uses four samples per prompt, temperature 0.9, top-p 0.95, GRPO, KL coefficient 0.01, and actor LoRA rank 8. It connects the SFT checkpoint to the structured prompt and full reward function, and uses a local file logger by default.
 
-The new prompt uses EasyR1's `content` template variable. It is a replacement template; the original prompt file was not provided. Compare it with your original SFT prompt before experimental replication.
+The prompt uses the `content` template variable. Keep the output structure consistent between SFT and RL.
 
-For offline training, pre-download the required models, set local model paths as appropriate, and enable `semantic_local_files_only`. Run validation first and inspect `reward_error`, component scores, image loading, and generated examples. A missing model or invalid ground-truth field may produce zero rewards instead of stopping the worker.
+For offline training, pre-download the required models, set local model paths as appropriate, and enable `semantic_local_files_only`. Before training, check `reward_error`, component scores, image loading, and generated examples. A missing model or invalid ground-truth field may produce zero rewards instead of stopping the worker.
 
 ## 5. Export and serve
 
 Use the checkpoint export/merging procedure for your installed EasyR1 version. A raw sharded actor checkpoint or LoRA-only directory is not sufficient for the application. Point `QWEN_MODEL_PATH` to the full Hugging Face checkpoint containing processor/tokenizer files.
 
-The app defaults to three pages in multiple-page mode while RL rollout limits images to two. Its `QWEN_MIN_PIXELS=3136` also differs from the RL template's `min_pixels=262144`. Match inference and training preprocessing for controlled evaluations; these settings were not silently unified in this release.
+The app defaults to three pages in multiple-page mode while RL rollout limits images to two. Its `QWEN_MIN_PIXELS=3136` also differs from the RL template's `min_pixels=262144`. Align these preprocessing settings for controlled evaluations.

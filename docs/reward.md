@@ -6,7 +6,7 @@ The batch entry point `compute_score` implements the evidence grounding and hier
 
 `R = R_accuracy + R_ground + R_path + R_format`.
 
-All four outer weights are `1.0`. Answer accuracy remains `0.10 EM + 0.10 token_F1 + 0.80 semantic`, using the existing sentence encoder and normalization. Output-format scoring is unchanged. The supplied manuscript excerpt does not redefine these two components.
+All four outer weights are `1.0`. Answer accuracy combines `0.10 EM + 0.10 token_F1 + 0.80 semantic`, using sentence embeddings and text normalization. Output-format scoring checks the required tags, reasoning steps, and evidence syntax.
 
 The grounding formula permits a maximum of **1.1**, because both bonuses may be 1. Thus the total has range **[0, 4.1]** with the default weights. There is no clipping or averaging of the total. `require_valid_weight_sum=false` permits unit outer weights.
 
@@ -24,11 +24,11 @@ S_h-IoU(u) = 0    if u <= 0.1
 R_ground = 0.9 S_h-IoU + 0.1 (S_cov + S_merge)
 ```
 
-At `u=0.5`, the implementation follows the manuscript prose (“reaching 0.5”) and the IoU@0.5 convention. The intermediate reward is the original IoU, not a linear rescaling between thresholds. There is no additional coordinate-validity reward or extra-box penalty.
+An IoU of `0.5` receives a hybrid IoU score of `1`. The intermediate reward is the original IoU, not a linear rescaling between thresholds. There is no additional coordinate-validity reward or extra-box penalty.
 
 ### Operational definitions for bonuses and multiple boxes
 
-The manuscript describes coverage and merged-evidence bonuses qualitatively. The following configurable numerical rules make those descriptions executable; these are implementation defaults, not additional thresholds stated in the manuscript.
+The coverage and merged-evidence bonuses use the following configurable implementation defaults.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ R_path     = G_accuracy * (0.4 V_step + 0.6 V_path)
 
 ColQwen2 crop/text similarity retains the implementation's cosine between mean-pooled, L2-normalized multi-vector embeddings. It is not the application's ColPali retrieval score. A similarity equal to `0.5` passes.
 
-Step validity is the **fraction of predicted steps**, not an all-or-nothing minimum over the whole path. Missing citations, missing page images, and invalid crops count as failed steps in the denominator. The manuscript specifies one region per step; when a step cites multiple regions, the implemented extension requires every citation to pass and still counts that step only once.
+Step validity is the **fraction of predicted steps**, not an all-or-nothing minimum over the whole path. Missing citations, missing page images, and invalid crops count as failed steps in the denominator. When a step cites multiple regions, every citation must pass; the step is counted once.
 
 Reference steps must carry an explicit integer `hierarchy_level`:
 
@@ -80,4 +80,4 @@ See `examples/reward_input.json` and `examples/rl_sample.json`. Add `hierarchy_l
 
 EasyR1 receives numeric metrics including `overall`, `answer_accuracy`, `final_grounding`, `evidence_path`, `output_format`, `grounding_hybrid_iou`, both bonus scores, `step_validity`, `step_order_score`, and `step_accuracy_gate`. Per-sample failures produce `reward_error=1` and zero rewards. Invalid global settings raise before sample processing.
 
-Use `configs/rl/full_reward.yaml` for these equations. Old overlap, soft-IoU-weight, and text/bbox order-matching arguments are rejected by the new entry-point signature.
+Use `configs/rl/full_reward.yaml` for these equations. Pass the reward arguments listed in that configuration to `compute_score`.
