@@ -71,11 +71,12 @@ Example output:
 
 ```xml
 <think>
-1. Locate the section "". {Image index: 1, box 2d: [100, 200, 800, 300]}
-2. Read the specified width. {Image index: 1, box 2d: [100, 400, 800, 500]}
+1. Locate the relevant section. {Image index: 1, box 2d: [100, 200, 800, 300]}
+2. Locate the relevant subsection within the section. {Image index: 1, box 2d: [100, 300, 800, 400]}
+3. Read the provision specifying the required width. {Image index: 1, box 2d: [100, 400, 800, 500]}
 </think>
 <answer>The required width is 1.2 m.</answer>
-<evidence>[{Image index: 1, box 2d: [100, 400, 800, 500]}]</evidence>
+<evidence>Image index: 1, box 2d:[100, 400, 800, 500]</evidence>
 ```
 
 Coordinates are `[x1, y1, x2, y2]` pixels by default. Image indices are 1-based positions in the model's input image list, not necessarily original PDF page numbers.
