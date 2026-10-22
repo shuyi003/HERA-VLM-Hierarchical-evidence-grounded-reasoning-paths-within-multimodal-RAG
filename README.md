@@ -71,8 +71,8 @@ Example output:
 
 ```xml
 <think>
-Step 1: Locate the requirement. {Image index: 1, box 2d: [100, 200, 800, 300]}
-Step 2: Read the specified width. {Image index: 1, box 2d: [100, 400, 800, 500]}
+1. Locate the section "". {Image index: 1, box 2d: [100, 200, 800, 300]}
+2. Read the specified width. {Image index: 1, box 2d: [100, 400, 800, 500]}
 </think>
 <answer>The required width is 1.2 m.</answer>
 <evidence>[{Image index: 1, box 2d: [100, 400, 800, 500]}]</evidence>
